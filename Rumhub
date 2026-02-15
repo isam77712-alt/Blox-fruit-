@@ -1,40 +1,337 @@
--- LocalScript: Rum Béo 💩 - by King
--- Đặt trong StarterPlayerScripts hoặc StarterGui
+-- Rum Béo 💩 - by King
+-- LocalScript (StarterPlayerScripts hoặc StarterGui)
+
 local player = game.Players.LocalPlayer
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+local uis = game:GetService("UserInputService")
+local rs = game:GetService("RunService")
+local ws = game:GetService("Workspace")
 
 local char = player.Character or player.CharacterAdded:Wait()
 local hum = char:WaitForChild("Humanoid")
-local root = char:WaitForChild("HumanoidRootPart")
+local hrp = char:WaitForChild("HumanoidRootPart")
 
 -- Cài đặt
 local Settings = {
-    SpeedMultiplier = 1,
-    JumpMultiplier = 1,
-    Godmode = false
+    SpeedLevel = 1,          -- chỉ số 1 → 100, 200, 300, 1000
+    JumpLevel  = 1,          -- 1 → 50m, 100m, 1000m
+    Godmode    = false,
+    AutoDodge  = false
 }
+
+local speedOptions = {1, 100, 200, 300, 1000}
+local jumpOptions  = {1, 50, 100, 1000}   -- nhân với base \~50 để ra khoảng cách nhảy
 
 -- Tạo GUI
 local sg = Instance.new("ScreenGui")
-sg.Name = "RumBeoCheat"
+sg.Name = "RumBeoByKing"
 sg.ResetOnSpawn = false
 sg.Parent = player:WaitForChild("PlayerGui")
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 280, 0, 320)
-mainFrame.Position = UDim2.new(0.5, -140, 0.5, -160)
-mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-mainFrame.BorderSizePixel = 0
-mainFrame.Active = true   -- Quan trọng để nhận input
-mainFrame.Draggable = false  -- Tắt draggable mặc định, ta tự code
-mainFrame.Parent = sg
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 290, 0, 360)
+frame.Position = UDim2.new(0.5, -145, 0.5, -180)
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Parent = sg
 
-local uicorner = Instance.new("UICorner")
-uicorner.CornerRadius = UDim.new(0, 16)
-uicorner.Parent = mainFrame
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 18)
+corner.Parent = frame
 
-local gradient = Instance.new("UIGradient")
+local grad = Instance.new("UIGradient")
+grad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 20, 70)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 5, 30))
+}
+grad.Rotation = 50
+grad.Parent = frame
+
+-- Title
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1,0,0,50)
+titleBar.BackgroundColor3 = Color3.fromRGB(220, 70, 100)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+
+local tcorner = Instance.new("UICorner")
+tcorner.CornerRadius = UDim.new(0, 18)
+tcorner.Parent = titleBar
+
+local titleTxt = Instance.new("TextLabel")
+titleTxt.Size = UDim2.new(1,-80,1,0)
+titleTxt.Position = UDim2.new(0,20,0,0)
+titleTxt.BackgroundTransparency = 1
+titleTxt.Text = "Rum Béo 💩"
+titleTxt.TextColor3 = Color3.new(1,1,1)
+titleTxt.TextSize = 28
+titleTxt.Font = Enum.Font.GothamBlack
+titleTxt.TextXAlignment = Enum.TextXAlignment.Left
+titleTxt.Parent = titleBar
+
+local byKing = Instance.new("TextLabel")
+byKing.Size = UDim2.new(1,-80,0,20)
+byKing.Position = UDim2.new(0,20,0,28)
+byKing.BackgroundTransparency = 1
+byKing.Text = "by King"
+byKing.TextColor3 = Color3.fromRGB(240,240,255)
+byKing.TextSize = 15
+byKing.Font = Enum.Font.GothamSemibold
+byKing.TextXAlignment = Enum.TextXAlignment.Left
+byKing.Parent = titleBar
+
+-- Close button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0,38,0,38)
+closeBtn.Position = UDim2.new(1,-48,0,6)
+closeBtn.BackgroundColor3 = Color3.fromRGB(240,60,60)
+closeBtn.Text = "×"
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 26
+closeBtn.Parent = titleBar
+
+local clCorner = Instance.new("UICorner")
+clCorner.CornerRadius = UDim.new(0,12)
+clCorner.Parent = closeBtn
+
+-- Content frame
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1,-28,1,-70)
+content.Position = UDim2.new(0,14,0,55)
+content.BackgroundTransparency = 1
+content.Parent = frame
+
+-- Tạo nút chọn mức (click để chuyển)
+local function CreateSelector(name, y, opts, defIdx, callback)
+    local cont = Instance.new("Frame")
+    cont.Size = UDim2.new(1,0,0,48)
+    cont.Position = UDim2.new(0,0,0,y)
+    cont.BackgroundTransparency = 1
+    cont.Parent = content
+    
+    local lab = Instance.new("TextLabel")
+    lab.Size = UDim2.new(0.58,0,1,0)
+    lab.BackgroundTransparency = 1
+    lab.Text = name
+    lab.TextColor3 = Color3.fromRGB(230,230,250)
+    lab.TextSize = 19
+    lab.Font = Enum.Font.GothamSemibold
+    lab.TextXAlignment = Enum.TextXAlignment.Left
+    lab.Parent = cont
+    
+    local valLab = Instance.new("TextLabel")
+    valLab.Size = UDim2.new(0.42,0,1,0)
+    valLab.Position = UDim2.new(0.58,0,0,0)
+    valLab.BackgroundTransparency = 1
+    valLab.Text = opts[defIdx] .. (name:find("Tốc") and "" or "m")
+    valLab.TextColor3 = Color3.fromRGB(140, 255, 200)
+    valLab.TextSize = 19
+    valLab.Font = Enum.Font.GothamBold
+    valLab.TextXAlignment = Enum.TextXAlignment.Right
+    valLab.Parent = cont
+    
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,0,1,0)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Parent = cont
+    
+    local curIdx = defIdx
+    
+    btn.MouseButton1Click:Connect(function()
+        curIdx = curIdx + 1
+        if curIdx > #opts then curIdx = 1 end
+        valLab.Text = opts[curIdx] .. (name:find("Tốc") and "" or "m")
+        callback(opts[curIdx])
+    end)
+    
+    btn.MouseEnter:Connect(function()
+        cont.BackgroundColor3 = Color3.fromRGB(45,45,60)
+        cont.BackgroundTransparency = 0.65
+    end)
+    btn.MouseLeave:Connect(function()
+        cont.BackgroundTransparency = 1
+    end)
+end
+
+CreateSelector("Tốc độ chạy", 0,   speedOptions, 1, function(v) Settings.SpeedLevel = v end)
+CreateSelector("Nhảy cao",     55,  jumpOptions,  1, function(v) Settings.JumpLevel  = v end)
+
+-- Auto Dodge toggle
+local dodgeCont = Instance.new("Frame")
+dodgeCont.Size = UDim2.new(1,0,0,48)
+dodgeCont.Position = UDim2.new(0,0,0,110)
+dodgeCont.BackgroundTransparency = 1
+dodgeCont.Parent = content
+
+local dodgeLab = Instance.new("TextLabel")
+dodgeLab.Size = UDim2.new(0.7,0,1,0)
+dodgeLab.BackgroundTransparency = 1
+dodgeLab.Text = "Tự động né chiêu/vật bay"
+dodgeLab.TextColor3 = Color3.fromRGB(230,230,250)
+dodgeLab.TextSize = 19
+dodgeLab.Font = Enum.Font.GothamSemibold
+dodgeLab.TextXAlignment = Enum.TextXAlignment.Left
+dodgeLab.Parent = dodgeCont
+
+local dodgeTog = Instance.new("TextButton")
+dodgeTog.Size = UDim2.new(0,80,0,34)
+dodgeTog.Position = UDim2.new(1,-90,0.5,-17)
+dodgeTog.BackgroundColor3 = Color3.fromRGB(70,70,80)
+dodgeTog.Text = "OFF"
+dodgeTog.TextColor3 = Color3.fromRGB(180,180,180)
+dodgeTog.Font = Enum.Font.GothamBold
+dodgeTog.TextSize = 17
+dodgeTog.Parent = dodgeCont
+
+local togCor = Instance.new("UICorner")
+togCor.CornerRadius = UDim.new(0,17)
+togCor.Parent = dodgeTog
+
+local dodgeOn = false
+
+dodgeTog.MouseButton1Click:Connect(function()
+    dodgeOn = not dodgeOn
+    Settings.AutoDodge = dodgeOn
+    if dodgeOn then
+        dodgeTog.BackgroundColor3 = Color3.fromRGB(80, 230, 120)
+        dodgeTog.Text = "ON"
+        dodgeTog.TextColor3 = Color3.new(1,1,1)
+    else
+        dodgeTog.BackgroundColor3 = Color3.fromRGB(70,70,80)
+        dodgeTog.Text = "OFF"
+        dodgeTog.TextColor3 = Color3.fromRGB(180,180,180)
+    end
+end)
+
+-- Godmode toggle
+local godCont = Instance.new("Frame")
+godCont.Size = UDim2.new(1,0,0,48)
+godCont.Position = UDim2.new(0,0,0,165)
+godCont.BackgroundTransparency = 1
+godCont.Parent = content
+
+local godLab = Instance.new("TextLabel")
+godLab.Size = UDim2.new(0.7,0,1,0)
+godLab.BackgroundTransparency = 1
+godLab.Text = "Bất tử (ko ai đánh được)"
+godLab.TextColor3 = Color3.fromRGB(230,230,250)
+godLab.TextSize = 19
+godLab.Font = Enum.Font.GothamSemibold
+godLab.TextXAlignment = Enum.TextXAlignment.Left
+godLab.Parent = godCont
+
+local godTog = Instance.new("TextButton")
+godTog.Size = UDim2.new(0,80,0,34)
+godTog.Position = UDim2.new(1,-90,0.5,-17)
+godTog.BackgroundColor3 = Color3.fromRGB(70,70,80)
+godTog.Text = "OFF"
+godTog.TextColor3 = Color3.fromRGB(180,180,180)
+godTog.Font = Enum.Font.GothamBold
+godTog.TextSize = 17
+godTog.Parent = godCont
+
+local godCor = Instance.new("UICorner")
+godCor.CornerRadius = UDim.new(0,17)
+godCor.Parent = godTog
+
+local godOn = false
+
+godTog.MouseButton1Click:Connect(function()
+    godOn = not godOn
+    Settings.Godmode = godOn
+    if godOn then
+        godTog.BackgroundColor3 = Color3.fromRGB(80, 230, 120)
+        godTog.Text = "ON"
+        godTog.TextColor3 = Color3.new(1,1,1)
+    else
+        godTog.BackgroundColor3 = Color3.fromRGB(70,70,80)
+        godTog.Text = "OFF"
+        godTog.TextColor3 = Color3.fromRGB(180,180,180)
+    end
+end)
+
+-- Logic chính mỗi frame
+rs.RenderStepped:Connect(function()
+    if not hum or not hrp then return end
+    
+    hum.WalkSpeed = 16 * Settings.SpeedLevel
+    hum.JumpPower = 50 * Settings.JumpLevel   -- ≈ nhảy cao tương ứng
+    
+    if Settings.Godmode then
+        hum.MaxHealth = math.huge
+        hum.Health = math.huge
+    elseif hum.MaxHealth == math.huge then
+        hum.MaxHealth = 100
+        hum.Health = 100
+    end
+    
+    -- Auto Dodge cơ bản (né vật bay tới nhanh)
+    if Settings.AutoDodge then
+        for _, part in ipairs(ws:GetDescendants()) do
+            if part:IsA("BasePart") and part \~= hrp and part.AssemblyLinearVelocity.Magnitude > 80 then
+                local dist = (part.Position - hrp.Position).Magnitude
+                if dist < 35 and dist > 3 then
+                    local toPlayer = (hrp.Position - part.Position).Unit
+                    local velDir = part.AssemblyLinearVelocity.Unit
+                    
+                    local dot = toPlayer:Dot(velDir)
+                    if dot > 0.85 then  -- đang bay gần thẳng vào người chơi
+                        -- Né ngang hoặc nhảy
+                        local side = hrp.CFrame.RightVector * (math.random() > 0.5 and 25 or -25)
+                        hrp.CFrame = hrp.CFrame + side + Vector3.new(0, math.random(8,20), 0)
+                        task.wait(0.08)  -- chống spam né quá nhanh
+                        break
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Respawn xử lý
+player.CharacterAdded:Connect(function(new)
+    char = new
+    hum = new:WaitForChild("Humanoid")
+    hrp = new:WaitForChild("HumanoidRootPart")
+end)
+
+-- Kéo GUI
+local dragging, dragStart, startPos
+titleBar.InputBegan:Connect(function(inp)
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = inp.Position
+        startPos = frame.Position
+    end
+end)
+
+titleBar.InputEnded:Connect(function(inp)
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+uis.InputChanged:Connect(function(inp)
+    if dragging and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
+        local delta = inp.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Đóng & toggle GUI
+closeBtn.MouseButton1Click:Connect(function()
+    sg:Destroy()
+end)
+
+uis.InputBegan:Connect(function(inp)
+    if inp.KeyCode == Enum.KeyCode.Insert then
+        sg.Enabled = not sg.Enabled
+    end
+end)
+
+print("Rum Béo 💩 loaded! Insert để ẩn/hiện | Kéo title bar để di chuyển")local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 25, 65)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 8, 28))
