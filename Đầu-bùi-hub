@@ -1,0 +1,304 @@
+-- Grok Speed/Fly/God/Jump UI Hub (OrionLib - 100% Work 2026) - Keyless
+local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Orion/main/source'))()
+
+local Window = OrionLib:MakeWindow({
+    Name = "Grok Hub - Speed/Fly/God/Nhảy Cao 🚀",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "GrokHub"
+})
+
+local Players = game:GetService("Players")
+local RS = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local LP = Players.LocalPlayer
+local Char = LP.Character or LP.CharacterAdded:Wait()
+local Hum = Char:WaitForChild("Humanoid")
+local Root = Char:WaitForChild("HumanoidRootPart")
+
+-- Vars
+local FlySpeed = 50
+local FlyEnabled = false
+local GodEnabled = false
+local JumpEnabled = false
+local SpeedVal = 16
+local JumpVal = 50
+local BodyVel, BodyGyro = nil, nil
+
+-- Functions
+local function UpdateChar()
+    if Hum then
+        Hum.WalkSpeed = SpeedVal
+        Hum.JumpPower = JumpVal
+    end
+end
+
+local function ToggleGod(state)
+    GodEnabled = state
+    if state then
+        local ff = Instance.new("ForceField")
+        ff.Parent = Char
+        Hum.MaxHealth = math.huge
+        Hum.Health = math.huge
+        spawn(function()
+            while GodEnabled do
+                wait()
+                if Hum.Health < math.huge then Hum.Health = math.huge end
+            end
+        end)
+    else
+        for _, v in pairs(Char:GetChildren()) do
+            if v:IsA("ForceField") then v:Destroy() end
+        end
+        Hum.MaxHealth = 100
+        Hum.Health = Hum.MaxHealth
+    end
+end
+
+local function ToggleFly(state)
+    FlyEnabled = state
+    if state then
+        BodyVel = Instance.new("BodyVelocity")
+        BodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        BodyVel.Velocity = Vector3.new(0,0,0)
+        BodyVel.Parent = Root
+        
+        BodyGyro = Instance.new("BodyGyro")
+        BodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        BodyGyro.CFrame = Root.CFrame
+        BodyGyro.Parent = Root
+        
+        spawn(function()
+            while FlyEnabled do
+                wait()
+                if not Root or not Hum then break end
+                Hum.PlatformStand = true
+                local cam = workspace.CurrentCamera
+                local dir = Vector3.new(0,0,0)
+                if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.CFrame.LookVector end
+                if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.CFrame.LookVector end
+                if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.CFrame.RightVector end
+                if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.CFrame.RightVector end
+                if UIS:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
+                if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then dir = dir + Vector3.new(0,-1,0) end
+                BodyVel.Velocity = dir * FlySpeed
+                BodyGyro.CFrame = cam.CFrame
+            end
+            if BodyVel then BodyVel:Destroy() end
+            if BodyGyro then BodyGyro:Destroy() end
+            if Hum then Hum.PlatformStand = false end
+        end)
+    else
+        if BodyVel then BodyVel:Destroy() end
+        if BodyGyro then BodyGyro:Destroy() end
+        if Hum then Hum.PlatformStand = false end
+    end
+end
+
+-- UI Tabs
+local MainTab = Window:MakeTab({
+    Name = "Main Hacks",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local SpeedSec = MainTab:AddSection({
+    Name = "Chạy Nhanh (Speed)"
+})
+
+MainTab:AddButton({
+    Name = "Speed 100",
+    Callback = function()
+        SpeedVal = 100
+        UpdateChar()
+        OrionLib:MakeNotification({
+            Name = "Grok Hub",
+            Content = "Speed: 100",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+MainTab:AddButton({
+    Name = "Speed 500",
+    Callback = function()
+        SpeedVal = 500
+        UpdateChar()
+        OrionLib:MakeNotification({
+            Name = "Grok Hub",
+            Content = "Speed: 500",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+MainTab:AddButton({
+    Name = "Speed 1000",
+    Callback = function()
+        SpeedVal = 1000
+        UpdateChar()
+        OrionLib:MakeNotification({
+            Name = "Grok Hub",
+            Content = "Speed: 1000",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+MainTab:AddButton({
+    Name = "Speed MAX (100000)",
+    Callback = function()
+        SpeedVal = 100000
+        UpdateChar()
+        OrionLib:MakeNotification({
+            Name = "Grok Hub",
+            Content = "Speed MAX!",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+MainTab:AddButton({
+    Name = "Reset Speed (16)",
+    Callback = function()
+        SpeedVal = 16
+        UpdateChar()
+    end
+})
+
+MainTab:AddSlider({
+    Name = "Speed Slider",
+    Min = 16,
+    Max = 100000,
+    Default = 16,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Speed",
+    Callback = function(v)
+        SpeedVal = v
+        UpdateChar()
+    end
+})
+
+local JumpSec = MainTab:AddSection({
+    Name = "Nhảy Cao (Jump Power)"
+})
+
+MainTab:AddButton({
+    Name = "Jump 100",
+    Callback = function()
+        JumpVal = 100
+        UpdateChar()
+    end
+})
+
+MainTab:AddButton({
+    Name = "Jump 500",
+    Callback = function()
+        JumpVal = 500
+        UpdateChar()
+    end
+})
+
+MainTab:AddButton({
+    Name = "Jump 1000",
+    Callback = function()
+        JumpVal = 1000
+        UpdateChar()
+    end
+})
+
+MainTab:AddButton({
+    Name = "Jump MAX (100000)",
+    Callback = function()
+        JumpVal = 100000
+        UpdateChar()
+        OrionLib:MakeNotification({
+            Name = "Grok Hub",
+            Content = "Jump MAX! Spam Space 🚀",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+MainTab:AddButton({
+    Name = "Reset Jump (50)",
+    Callback = function()
+        JumpVal = 50
+        UpdateChar()
+    end
+})
+
+MainTab:AddSlider({
+    Name = "Jump Slider",
+    Min = 50,
+    Max = 100000,
+    Default = 50,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Jump",
+    Callback = function(v)
+        JumpVal = v
+        UpdateChar()
+    end
+})
+
+local FlySec = MainTab:AddSection({
+    Name = "Fly (Bay)"
+})
+
+MainTab:AddToggle({
+    Name = "Bật Fly (WASD + Space/Ctrl)",
+    Default = false,
+    Callback = function(v)
+        ToggleFly(v)
+    end
+})
+
+MainTab:AddSlider({
+    Name = "Tốc Độ Bay",
+    Min = 10,
+    Max = 500,
+    Default = 50,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Fly Speed",
+    Callback = function(v)
+        FlySpeed = v
+    end
+})
+
+local GodSec = MainTab:AddSection({
+    Name = "Bất Tử (God Mode)"
+})
+
+MainTab:AddToggle({
+    Name = "God Mode (HP ∞)",
+    Default = false,
+    Callback = function(v)
+        ToggleGod(v)
+    end
+})
+
+-- Auto Team
+pcall(function()
+    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Pirates")
+end)
+
+-- Reload Char
+LP.CharacterAdded:Connect(function(newChar)
+    Char = newChar
+    Hum = newChar:WaitForChild("Humanoid")
+    Root = newChar:WaitForChild("HumanoidRootPart")
+    UpdateChar()
+    if GodEnabled then ToggleGod(true) end
+    if FlyEnabled then ToggleFly(true) end
+end)
+
+OrionLib:Init()
+print("Grok UI Hub Loaded! OrionLib - Bật toggle/button/slider 🚀")
