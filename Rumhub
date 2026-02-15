@@ -1,0 +1,269 @@
+-- LocalScript: Rum Béo 💩 - by King
+-- Đặt trong StarterPlayerScripts hoặc StarterGui
+local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local char = player.Character or player.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+local root = char:WaitForChild("HumanoidRootPart")
+
+-- Cài đặt
+local Settings = {
+    SpeedMultiplier = 1,
+    JumpMultiplier = 1,
+    Godmode = false
+}
+
+-- Tạo GUI
+local sg = Instance.new("ScreenGui")
+sg.Name = "RumBeoCheat"
+sg.ResetOnSpawn = false
+sg.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 280, 0, 320)
+mainFrame.Position = UDim2.new(0.5, -140, 0.5, -160)
+mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true   -- Quan trọng để nhận input
+mainFrame.Draggable = false  -- Tắt draggable mặc định, ta tự code
+mainFrame.Parent = sg
+
+local uicorner = Instance.new("UICorner")
+uicorner.CornerRadius = UDim.new(0, 16)
+uicorner.Parent = mainFrame
+
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 25, 65)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 8, 28))
+}
+gradient.Rotation = 40
+gradient.Parent = mainFrame
+
+-- Title bar (dùng để kéo)
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 48)
+titleBar.BackgroundColor3 = Color3.fromRGB(210, 70, 90)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 16)
+titleCorner.Parent = titleBar
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -70, 1, 0)
+title.Position = UDim2.new(0, 18, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Rum Béo 💩"
+title.TextColor3 = Color3.new(1,1,1)
+title.TextSize = 26
+title.Font = Enum.Font.GothamBlack
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+local by = Instance.new("TextLabel")
+by.Size = UDim2.new(1, -70, 0, 18)
+by.Position = UDim2.new(0, 18, 0, 28)
+by.BackgroundTransparency = 1
+by.Text = "by King"
+by.TextColor3 = Color3.fromRGB(230, 230, 255)
+by.TextSize = 14
+by.Font = Enum.Font.GothamSemibold
+by.TextXAlignment = Enum.TextXAlignment.Left
+by.Parent = titleBar
+
+-- Nút đóng
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 36, 0, 36)
+close.Position = UDim2.new(1, -44, 0, 6)
+close.BackgroundColor3 = Color3.fromRGB(230, 60, 60)
+close.Text = "×"
+close.TextColor3 = Color3.new(1,1,1)
+close.Font = Enum.Font.GothamBold
+close.TextSize = 24
+close.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 10)
+closeCorner.Parent = close
+
+-- Content
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, -24, 1, -65)
+content.Position = UDim2.new(0, 12, 0, 53)
+content.BackgroundTransparency = 1
+content.Parent = mainFrame
+
+-- Hàm tạo nút chọn (click để chuyển mức)
+local function CreateOption(name, yOffset, values, defaultIdx, callback)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 45)
+    f.Position = UDim2.new(0, 0, 0, yOffset)
+    f.BackgroundTransparency = 1
+    f.Parent = content
+    
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0.55, 0, 1, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = name
+    lbl.TextColor3 = Color3.fromRGB(225,225,245)
+    lbl.TextSize = 18
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = f
+    
+    local valLbl = Instance.new("TextLabel")
+    valLbl.Size = UDim2.new(0.45, 0, 1, 0)
+    valLbl.Position = UDim2.new(0.55, 0, 0, 0)
+    valLbl.BackgroundTransparency = 1
+    valLbl.Text = values[defaultIdx] .. "x"
+    valLbl.TextColor3 = Color3.fromRGB(120, 255, 190)
+    valLbl.TextSize = 18
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.TextXAlignment = Enum.TextXAlignment.Right
+    valLbl.Parent = f
+    
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,0,1,0)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Parent = f
+    
+    local idx = defaultIdx
+    
+    btn.MouseButton1Click:Connect(function()
+        idx = idx + 1
+        if idx > #values then idx = 1 end
+        valLbl.Text = values[idx] .. "x"
+        callback(values[idx])
+    end)
+    
+    -- Hover effect
+    btn.MouseEnter:Connect(function()
+        f.BackgroundColor3 = Color3.fromRGB(40,40,55)
+        f.BackgroundTransparency = 0.6
+    end)
+    btn.MouseLeave:Connect(function()
+        f.BackgroundTransparency = 1
+    end)
+end
+
+CreateOption("Tốc độ chạy", 0,   {1, 100, 200, 300}, 1, function(v) Settings.SpeedMultiplier = v end)
+CreateOption("Nhảy cao",     55,  {1, 50, 100},       1, function(v) Settings.JumpMultiplier = v end)
+
+-- Godmode toggle
+local godF = Instance.new("Frame")
+godF.Size = UDim2.new(1,0,0,45)
+godF.Position = UDim2.new(0,0,0,110)
+godF.BackgroundTransparency = 1
+godF.Parent = content
+
+local godLbl = Instance.new("TextLabel")
+godLbl.Size = UDim2.new(0.7,0,1,0)
+godLbl.BackgroundTransparency = 1
+godLbl.Text = "Bất tử"
+godLbl.TextColor3 = Color3.fromRGB(225,225,245)
+godLbl.TextSize = 18
+godLbl.Font = Enum.Font.GothamSemibold
+godLbl.TextXAlignment = Enum.TextXAlignment.Left
+godLbl.Parent = godF
+
+local tog = Instance.new("TextButton")
+tog.Size = UDim2.new(0, 70, 0, 32)
+tog.Position = UDim2.new(1,-80,0.5,-16)
+tog.BackgroundColor3 = Color3.fromRGB(65,65,75)
+tog.Text = "OFF"
+tog.TextColor3 = Color3.fromRGB(170,170,170)
+tog.Font = Enum.Font.GothamBold
+tog.TextSize = 16
+tog.Parent = godF
+
+local togC = Instance.new("UICorner")
+togC.CornerRadius = UDim.new(0, 16)
+togC.Parent = tog
+
+local godOn = false
+
+tog.MouseButton1Click:Connect(function()
+    godOn = not godOn
+    Settings.Godmode = godOn
+    if godOn then
+        tog.BackgroundColor3 = Color3.fromRGB(70, 220, 110)
+        tog.Text = "ON"
+        tog.TextColor3 = Color3.new(1,1,1)
+    else
+        tog.BackgroundColor3 = Color3.fromRGB(65,65,75)
+        tog.Text = "OFF"
+        tog.TextColor3 = Color3.fromRGB(170,170,170)
+    end
+end)
+
+-- Cập nhật nhân vật
+RunService.RenderStepped:Connect(function()
+    if hum then
+        hum.WalkSpeed = 16 * Settings.SpeedMultiplier
+        hum.JumpPower = 50 * Settings.JumpMultiplier
+        if Settings.Godmode then
+            hum.MaxHealth = math.huge
+            hum.Health = math.huge
+        elseif hum.MaxHealth == math.huge then
+            hum.MaxHealth = 100
+            hum.Health = 100
+        end
+    end
+end)
+
+player.CharacterAdded:Connect(function(newChar)
+    char = newChar
+    hum = newChar:WaitForChild("Humanoid")
+    root = newChar:WaitForChild("HumanoidRootPart")
+end)
+
+-- Kéo GUI (di chuyển trái phải trên dưới)
+local dragging = false
+local dragStartPos
+local frameStartPos
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStartPos = input.Position
+        frameStartPos = mainFrame.Position
+    end
+end)
+
+titleBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStartPos
+        mainFrame.Position = UDim2.new(
+            frameStartPos.X.Scale,
+            frameStartPos.X.Offset + delta.X,
+            frameStartPos.Y.Scale,
+            frameStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Đóng GUI
+close.MouseButton1Click:Connect(function()
+    sg:Destroy()
+end)
+
+-- Toggle GUI bằng Insert
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.Insert then
+        sg.Enabled = not sg.Enabled
+    end
+end)
+
+print("Rum Béo 💩 loaded! Kéo thanh 'Rum Béo 💩' để di chuyển | Insert để ẩn/hiện")
