@@ -1,0 +1,384 @@
+-- FTAP SUPER FLING + RAINBOW ESP (7 MÀU CẦU VỒNG CHO NHÂN VẬT)
+
+-- ESP: Tất cả players khác glow 7 màu cycle siêu dễ thấy (định vị mọi lúc)
+
+-- Pastebin gốc + ESP mới | Work 2026 | Mobile OK (Arceus X/Fluxus/Delta)
+
+local Players = game:GetService("Players")
+
+local UserInputService = game:GetService("UserInputService")
+
+local Workspace = game:GetService("Workspace")
+
+local RunService = game:GetService("RunService")
+
+local Debris = game:GetService("Debris")
+
+local LocalPlayer = Players.LocalPlayer
+
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+local bodyvel_Name = "FlingVelocity"
+
+local strength = 1000000000000  -- Giảm xuống 1e12 (vẫn ném cực mạnh, bay xa map, ít crash hơn 1e100)
+
+local fling = true
+
+local espEnabled = false  -- Toggle ESP
+
+-- 7 MÀU CẦU VÒNG
+
+local rainbowColors = {
+
+    Color3.fromRGB(255, 0, 0),      -- Đỏ
+
+    Color3.fromRGB(255, 127, 0),    -- Cam
+
+    Color3.fromRGB(255, 255, 0),    -- Vàng
+
+    Color3.fromRGB(0, 255, 0),      -- Xanh lá
+
+    Color3.fromRGB(0, 0, 255),      -- Xanh dương
+
+    Color3.fromRGB(75, 0, 130),     -- Chàm
+
+    Color3.fromRGB(148, 0, 211)     -- Tím
+
+}
+
+-- Tạo Frame chứa 2 buttons (draggable)
+
+local ScreenGui = Instance.new("ScreenGui")
+
+ScreenGui.Name = "FTAP_Hub"
+
+ScreenGui.Parent = PlayerGui
+
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local MainFrame = Instance.new("Frame")
+
+MainFrame.Name = "MainFrame"
+
+MainFrame.Parent = ScreenGui
+
+MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+
+MainFrame.BorderSizePixel = 0
+
+MainFrame.Position = UDim2.new(0.85, 0, 0.45, 0)
+
+MainFrame.Size = UDim2.new(0, 120, 0, 100)
+
+MainFrame.Active = true
+
+MainFrame.Draggable = true
+
+local UICorner = Instance.new("UICorner")
+
+UICorner.CornerRadius = UDim.new(0, 12)
+
+UICorner.Parent = MainFrame
+
+-- Super Fling Button
+
+local SuperFling = Instance.new("TextButton")
+
+SuperFling.Name = "SuperFling"
+
+SuperFling.Parent = MainFrame
+
+SuperFling.BackgroundColor3 = Color3.fromRGB(18, 255, 6)
+
+SuperFling.Position = UDim2.new(0.05, 0, 0.05, 0)
+
+SuperFling.Size = UDim2.new(0.9, 0, 0.45, 0)
+
+SuperFling.Font = Enum.Font.SciFi
+
+SuperFling.Text = "Super Fling: ON!"
+
+SuperFling.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+SuperFling.TextSize = 12
+
+SuperFling.TextStrokeColor3 = Color3.fromRGB(18, 255, 6)
+
+SuperFling.TextStrokeTransparency = 0
+
+SuperFling.TextWrapped = true
+
+local SuperCorner = Instance.new("UICorner")
+
+SuperCorner.CornerRadius = UDim.new(0, 8)
+
+SuperCorner.Parent = SuperFling
+
+-- Rainbow ESP Button
+
+local RainbowESP = Instance.new("TextButton")
+
+RainbowESP.Name = "RainbowESP"
+
+RainbowESP.Parent = MainFrame
+
+RainbowESP.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
+
+RainbowESP.Position = UDim2.new(0.05, 0, 0.55, 0)
+
+RainbowESP.Size = UDim2.new(0.9, 0, 0.45, 0)
+
+RainbowESP.Font = Enum.Font.SciFi
+
+RainbowESP.Text = "Rainbow ESP: OFF"
+
+RainbowESP.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+RainbowESP.TextSize = 12
+
+RainbowESP.TextStrokeColor3 = Color3.fromRGB(255, 0, 255)
+
+RainbowESP.TextStrokeTransparency = 0
+
+RainbowESP.TextWrapped = true
+
+local ESPCorner = Instance.new("UICorner")
+
+ESPCorner.CornerRadius = UDim.new(0, 8)
+
+ESPCorner.Parent = RainbowESP
+
+-- Title nhỏ
+
+local Title = Instance.new("TextLabel")
+
+Title.Parent = MainFrame
+
+Title.BackgroundTransparency = 1
+
+Title.Position = UDim2.new(0, 0, 0, -25)
+
+Title.Size = UDim2.new(1, 0, 0, 25)
+
+Title.Font = Enum.Font.GothamBold
+
+Title.Text = "FTAP HUB"
+
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+Title.TextSize = 14
+
+-- Super Fling Toggle
+
+SuperFling.MouseButton1Click:Connect(function()
+
+    if fling then
+
+        fling = false
+
+        SuperFling.Text = "Super Fling: OFF!"
+
+        SuperFling.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+
+        SuperFling.TextStrokeColor3 = Color3.fromRGB(255, 0, 0)
+
+    else
+
+        fling = true
+
+        SuperFling.Text = "Super Fling: ON!"
+
+        SuperFling.BackgroundColor3 = Color3.fromRGB(18, 255, 6)
+
+        SuperFling.TextStrokeColor3 = Color3.fromRGB(18, 255, 6)
+
+    end
+
+end)
+
+-- Rainbow ESP Toggle
+
+RainbowESP.MouseButton1Click:Connect(function()
+
+    espEnabled = not espEnabled
+
+    if espEnabled then
+
+        RainbowESP.Text = "Rainbow ESP: ON 🌈"
+
+        RainbowESP.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+
+        RainbowESP.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+
+        print("Rainbow ESP ON - Tất cả nhân vật glow 7 màu!")
+
+    else
+
+        RainbowESP.Text = "Rainbow ESP: OFF"
+
+        RainbowESP.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
+
+        RainbowESP.TextStrokeColor3 = Color3.fromRGB(255, 0, 255)
+
+        -- Destroy tất cả Highlights
+
+        for _, plr in pairs(Players:GetPlayers()) do
+
+            if plr.Character then
+
+                local highlight = plr.Character:FindFirstChild("Highlight")
+
+                if highlight then highlight:Destroy() end
+
+            end
+
+        end
+
+        print("Rainbow ESP OFF")
+
+    end
+
+end)
+
+-- Auto apply Highlight khi player join/respawn
+
+local function applyHighlight(plr)
+
+    if plr == LocalPlayer or not espEnabled then return end
+
+    if not plr.Character then return end
+
+    
+
+    local highlight = plr.Character:FindFirstChild("Highlight")
+
+    if not highlight then
+
+        highlight = Instance.new("Highlight")
+
+        highlight.Name = "Highlight"
+
+        highlight.Adornee = plr.Character
+
+        highlight.FillTransparency = 0.4
+
+        highlight.OutlineTransparency = 0
+
+        highlight.Parent = plr.Character
+
+    end
+
+end
+
+-- Connect cho tất cả players
+
+for _, plr in pairs(Players:GetPlayers()) do
+
+    plr.CharacterAdded:Connect(function() 
+
+        task.wait(1)  -- Đợi load
+
+        applyHighlight(plr) 
+
+    end)
+
+    if plr.Character then applyHighlight(plr) end
+
+end
+
+Players.PlayerAdded:Connect(function(plr)
+
+    plr.CharacterAdded:Connect(function() 
+
+        task.wait(1)
+
+        applyHighlight(plr) 
+
+    end)
+
+end)
+
+-- Cycle 7 màu mượt mà
+
+local colorConnection
+
+colorConnection = RunService.RenderStepped:Connect(function()
+
+    if not espEnabled then return end
+
+    
+
+    local colorIndex = math.floor((tick() * 5) % #rainbowColors) + 1
+
+    
+
+    for _, plr in pairs(Players:GetPlayers()) do
+
+        if plr.Character and plr.Character:FindFirstChild("Highlight") then
+
+            local highlight = plr.Character.Highlight
+
+            highlight.FillColor = rainbowColors[colorIndex]
+
+            highlight.OutlineColor = rainbowColors[colorIndex]
+
+        end
+
+    end
+
+end)
+
+-- Super Fling logic (đã chỉnh lực ném lên cực mạnh nhưng ổn định hơn)
+
+Workspace.ChildAdded:Connect(function(model)
+
+    if model.Name == "GrabParts" then
+
+        local part_to_impulse = model["GrabPart"]["WeldConstraint"].Part1
+
+        if part_to_impulse then
+
+            print("Part found!")
+
+            local velocityObj = Instance.new("BodyVelocity", part_to_impulse)
+
+            
+
+            model:GetPropertyChangedSignal("Parent"):Connect(function()
+
+                if not model.Parent then
+
+                    if fling then
+
+                        print("Launched với lực cực mạnh!")
+
+                        velocityObj.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+
+                        velocityObj.Velocity = Workspace.CurrentCamera.CFrame.lookVector * strength
+
+                        Debris:AddItem(velocityObj, 1)
+
+                    else
+
+                        velocityObj.MaxForce = Vector3.new(0,0,0)
+
+                        Debris:AddItem(velocityObj, 1)
+
+                        print("Cancel Launch!")
+
+                    end
+
+                end
+
+            end)
+
+        end
+
+    end
+
+end)
+
+print("FTAP HUB LOADED! Super Fling (lực 1e12 - chỉnh lên cao hơn nếu muốn) + Rainbow ESP sẵn sàng!")
+print("Nhấn Rainbow ESP để bật - Nhân vật khác glow cầu vồng siêu dễ thấy!")
